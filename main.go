@@ -7,10 +7,18 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+
+	"github.com/joho/godotenv"
 )
 
 // sendRequest sends an HTTP request based on the method, URL, and optional parameters
 func sendRequest(method, baseURL string, parameters map[string]string) {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Failed to load env file: %v", err)
+	}
+
 	// If there are parameters, append them to the URL
 	if len(parameters) > 0 {
 		queryParams := url.Values{}
@@ -43,26 +51,34 @@ func sendRequest(method, baseURL string, parameters map[string]string) {
 }
 
 func main() {
-	url := "https://httpbin.org/spec.json"
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Failed to load env file: %v", err)
+	}
+
+	apiBaseURL := os.Getenv("API_BASE_URL")
+	defaultString := os.Getenv("DEFAULT_STRING")
+	defaultInt := os.Getenv("DEFAULT_INT")
+	defaultBool := os.Getenv("DEFAULT_BOOL")
+
+	url := fmt.Sprintf("%s/spec.json", apiBaseURL)
 	endpoints := scrapper.GetEndpoints(url)
 
 	for _, endpoint := range endpoints {
-		path := fmt.Sprintf("https://httpbin.org%s", endpoint.Path)
+		path := fmt.Sprintf("%s%s", apiBaseURL, endpoint.Path)
 
 		// Create a parameters map if the endpoint has parameters
 		params := make(map[string]string)
 		for _, param := range endpoint.Parameters {
-			paramType := param.Type
-			switch paramType {
+			switch param.Type {
 			case "string":
-				params[param.Name] = "test_value"
+				params[param.Name] = defaultString
 			case "int":
-				params[param.Name] = "1234"
+				params[param.Name] = defaultInt
 			case "bool":
-				params[param.Name] = "true"
+				params[param.Name] = defaultBool
 			default:
-				params[param.Name] = "test_value"
-
+				params[param.Name] = defaultString
 			}
 		}
 
